@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle de Semáforos com Lógica Fuzzy</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col items-center p-4">
+    <h1 class="text-3xl font-bold mb-6">Sistema de Controle de Semáforos com Lógica Fuzzy</h1>
+    <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-4xl">
+        <h2 class="text-2xl font-semibold mb-4">Inserir Dados de Tráfego</h2>
+        <div id="loading" class="text-center text-gray-500 mb-4">
+            Carregando o sistema... Por favor, aguarde.
+        </div>
+        <form id="traffic-form" class="grid grid-cols-1 gap-4">
+            <!-- Segmentos de Tráfego -->
+            <div id="segments"></div>
+            <div class="flex space-x-4">
+                <button type="submit" id="calculate-btn" class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer" disabled>Calcular Tempos de Verde</button>
+            </div>
+        </form>
+        <div id="error" class="mt-4 text-red-500 hidden"></div>
+        <div id="results" class="mt-6 hidden">
+            <h2 class="text-2xl font-semibold mb-4">Durações do Sinal Verde</h2>
+            <table class="w-full border-collapse">
+                <thead>
+                    <tr class="bg-gray-200">
+                        <th class="border p-2">Semáforo</th>
+                        <th class="border p-2">Tempo de Verde (segundos)</th>
+                    </tr>
+                </thead>
+                <tbody id="results-table"></tbody>
+            </table>
+        </div>
+        <div id="graphs" class="mt-6 hidden">
+            <h2 class="text-2xl font-semibold mb-4">Gráficos de Lógica Fuzzy</h2>
+            <div id="graphs-container" class="grid grid-cols-1 gap-4"></div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
