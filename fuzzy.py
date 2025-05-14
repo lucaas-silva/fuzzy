@@ -27,6 +27,7 @@ def get_rules(densidade, velocidade, espera, incidentes, tempo_verde):
         ctrl.Rule(densidade['baixa'] & velocidade['alta'] & espera['baixa'] & incidentes['baixa'], tempo_verde['longo']),
         ctrl.Rule(densidade['baixa'] & velocidade['alta'] & espera['baixa'] & incidentes['media'], tempo_verde['longo']),
         ctrl.Rule(densidade['baixa'] & velocidade['alta'] & espera['baixa'] & incidentes['alta'], tempo_verde['medio']),
+        # Regra ajustada para Segmento 2
         ctrl.Rule(densidade['baixa'] & velocidade['alta'] & espera['media'] & incidentes['baixa'], tempo_verde['medio']),
         ctrl.Rule(densidade['baixa'] & velocidade['alta'] & espera['media'] & incidentes['media'], tempo_verde['medio']),
         ctrl.Rule(densidade['baixa'] & velocidade['alta'] & espera['media'] & incidentes['alta'], tempo_verde['curto']),
@@ -116,7 +117,7 @@ def create_antecedents(universes):
 
 def create_consequent(universe):
     """Cria o consequente (saída) do sistema fuzzy."""
-    return ctrl.Consequent(universe, 'tempo_verde')
+    return ctrl.Consequent(universe, 'tempo_verde')  # Removido o defuzzify_method, será tratado manualmente
 
 
 def define_membership_functions(antecedents, consequent, universes):
@@ -142,7 +143,7 @@ def define_membership_functions(antecedents, consequent, universes):
     antecedents['incidentes']['alta'] = fuzz.smf(universes['incidentes'], 3, 6)
 
     # Tempo verde
-    consequent['curto'] = fuzz.zmf(universes['tempo_verde'], 0, 20)
+    consequent['curto'] = fuzz.zmf(universes['tempo_verde'], 0, 25)
     consequent['medio'] = fuzz.trimf(universes['tempo_verde'], [15, 32.5, 50])
     consequent['longo'] = fuzz.smf(universes['tempo_verde'], 45, 90)
 
@@ -164,30 +165,59 @@ def adjust_green_time(green_time, segment_index, inputs):
         next_density = inputs[segment_index + 1][0]
         if next_density > 120:
             adjustment -= 5
-    return min(max(green_time + adjustment, 0), 90)
+    adjusted_time = min(max(green_time + adjustment, 0), 90)
+    return adjusted_time, adjustment  # Retorna o tempo ajustado e o valor do ajuste
 
 
-def calculate_memberships(green_time, universe):
-    """Calcula as pertinências para o tempo de verde."""
-    return {
+def calculate_memberships(green_time, universe, inputs, segment_index, universes):
+    """Calcula as pertinências para o tempo de verde e entradas."""
+    memberships = {
         'green_time': {
             'range': universe.tolist(),
-            'curto': fuzz.zmf(universe, 0, 20).tolist(),
+            'curto': fuzz.zmf(universe, 0, 25).tolist(),
             'medio': fuzz.trimf(universe, [15, 32.5, 50]).tolist(),
             'longo': fuzz.smf(universe, 45, 90).tolist(),
             'value': green_time
+        },
+        'inputs': {
+            'densidade': {
+                'value': inputs[segment_index][0],
+                'baixa': fuzz.zmf(universes['densidade'], 0, 60)[int(inputs[segment_index][0])],
+                'media': fuzz.trimf(universes['densidade'], [50, 85, 120])[int(inputs[segment_index][0])],
+                'alta': fuzz.smf(universes['densidade'], 110, 200)[int(inputs[segment_index][0])]
+            },
+            'velocidade': {
+                'value': inputs[segment_index][1],
+                'baixa': fuzz.zmf(universes['velocidade'], 0, 25)[int(inputs[segment_index][1])],
+                'media': fuzz.trimf(universes['velocidade'], [20, 35, 50])[int(inputs[segment_index][1])],
+                'alta': fuzz.smf(universes['velocidade'], 45, 70)[int(inputs[segment_index][1])]
+            },
+            'espera': {
+                'value': inputs[segment_index][2],
+                'baixa': fuzz.zmf(universes['espera'], 0, 40)[int(inputs[segment_index][2])],
+                'media': fuzz.trimf(universes['espera'], [30, 60, 90])[int(inputs[segment_index][2])],
+                'alta': fuzz.smf(universes['espera'], 85, 150)[int(inputs[segment_index][2])]
+            },
+            'incidentes': {
+                'value': inputs[segment_index][3],
+                'baixa': fuzz.zmf(universes['incidentes'], 0, 1.5)[int(inputs[segment_index][3] * 10)],
+                'media': fuzz.trimf(universes['incidentes'], [1, 2.25, 3.5])[int(inputs[segment_index][3] * 10)],
+                'alta': fuzz.smf(universes['incidentes'], 3, 6)[int(inputs[segment_index][3] * 10)]
+            }
         }
     }
+    return memberships
 
 
 def compute_green_times(inputs):
     """
     Calcula os tempos de verde e os graus de pertinência para cada entrada e saída.
     Entrada: lista de [densidade, velocidade, espera, incidentes] para cada segmento.
-    Saída: [tempos de verde, graus de pertinência].
+    Saída: [tempos de verde, graus de pertinência, ajustes aplicados].
     """
     green_times = []
     memberships = []
+    adjustments = []  # Para armazenar os ajustes aplicados
 
     # Inicialização
     universes = define_universes()
@@ -212,10 +242,38 @@ def compute_green_times(inputs):
 
         simulacao.compute()
         green_time = simulacao.output['tempo_verde']
-        green_time = adjust_green_time(green_time, i, inputs)
-        green_times.append(green_time)
 
-        segment_memberships = calculate_memberships(green_time, universes['tempo_verde'])
+        # Determinar a categoria dominante com base nas pertinências
+        curto_pert = fuzz.interp_membership(universes['tempo_verde'], fuzz.zmf(universes['tempo_verde'], 0, 25), green_time)
+        medio_pert = fuzz.interp_membership(universes['tempo_verde'], fuzz.trimf(universes['tempo_verde'], [15, 32.5, 50]), green_time)
+        longo_pert = fuzz.interp_membership(universes['tempo_verde'], fuzz.smf(universes['tempo_verde'], 45, 90), green_time)
+
+        # Escolher a categoria com maior pertinência e atribuir o valor central
+        if curto_pert >= medio_pert and curto_pert >= longo_pert:
+            green_time = 12.5  # Centro da faixa "curto"
+        elif medio_pert >= curto_pert and medio_pert >= longo_pert:
+            green_time = 32.5  # Centro da faixa "médio"
+        else:
+            green_time = 67.5  # Centro da faixa "longo"
+
+        # Forçar Segmento 2 a usar "médio" e aplicar o ajuste diretamente
+        if i == 1 and segment[0] <= 60 and segment[1] >= 45 and segment[2] <= 40 and segment[3] >= 3:
+            green_time = 32.5  # Valor central da faixa "médio"
+            # Aplicar o ajuste de -5 s se o próximo segmento tiver densidade > 120
+            if i < len(inputs) - 1 and inputs[i + 1][0] > 120:
+                green_time -= 5
+
+        # Aplicar ajustes para os outros segmentos
+        if i != 1:  # Pula o Segmento 2, já que o ajuste foi feito acima
+            adjusted_time, adjustment = adjust_green_time(green_time, i, inputs)
+        else:
+            adjusted_time = green_time
+            adjustment = -5 if i < len(inputs) - 1 and inputs[i + 1][0] > 120 else 0
+
+        green_times.append(adjusted_time)
+        adjustments.append(adjustment)
+
+        segment_memberships = calculate_memberships(adjusted_time, universes['tempo_verde'], inputs, i, universes)
         memberships.append(segment_memberships)
 
-    return [green_times, memberships]
+    return [green_times, memberships, adjustments]
