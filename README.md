@@ -1,127 +1,111 @@
-Controle Fuzzy de Semáforos 🚦
-Este projeto implementa um sistema de controle inteligente de semáforos utilizando Lógica Fuzzy. O objetivo é calcular automaticamente o tempo de verde ideal para cada segmento de tráfego, considerando múltiplos fatores como densidade de veículos, velocidade, tempo de espera e número de incidentes.
+Este projeto implementa um sistema de controle inteligente de semáforos utilizando Lógica Fuzzy. O objetivo é determinar automaticamente o tempo de verde mais adequado para cada segmento de tráfego, considerando fatores como:
 
-O sistema inclui também um Modo Emergencial, que permite ajustar o tempo de verde para situações críticas, e uma Previsão de Fluxo Futuro, que simula os próximos ciclos de tempo de verde.
+Densidade de veículos.
 
-Funcionalidades
-Cálculo do tempo de verde baseado nas variáveis de trânsito: densidade, velocidade, espera e incidentes.
+Velocidade média.
 
-Sistema de pertinência fuzzy com as categorias: Curto, Médio e Longo.
+Tempo de espera.
 
-Identificação automática da Função Dominante com justificativa.
+Número de incidentes.
 
-Modo Emergencial: aumenta o tempo de verde e permite ultrapassar o limite padrão de 90s, chegando até 120s.
+O sistema possui ainda a funcionalidade opcional de Modo Emergencial, que ajusta automaticamente o tempo de verde para situações críticas.
 
-Previsão de Fluxo Futuro: simula os próximos 3 ciclos.
+✅ Funcionalidades Principais
+Cálculo automático do tempo de verde com base em múltiplos fatores.
+
+Sistema Fuzzy real com variáveis de entrada e saída, funções de pertinência e regras de inferência.
+
+Determinação dos graus de pertinência e identificação da função dominante (Curto, Médio ou Longo).
+
+Modo Emergencial: ao ser ativado pelo usuário, adiciona um ajuste extra de tempo, com limite de segurança.
+
+Previsão de Fluxo Futuro: simula a tendência do tempo de verde para os próximos três ciclos.
 
 Geração automática de gráficos:
 
-Gráfico da sequência de tempos.
+Sequência de tempos de verde.
 
-Gráfico das funções de pertinência.
+Funções de pertinência fuzzy.
 
-Gráfico da previsão de fluxo futuro.
+Previsão de fluxo futuro.
 
-Interface web com tema Claro/Escuro e botão de Limpar Dados.
+Interface Web simples e funcional utilizando Flask.
 
-Tecnologias
-Python
+Suporte para alternância entre modo normal e modo emergencial via checkbox no formulário.
 
-Flask (servidor web)
+✅ Como Funciona
+O usuário preenche os valores para 4 segmentos de tráfego: densidade, velocidade, espera e incidentes.
 
-Matplotlib (geração de gráficos)
+O sistema processa cada segmento utilizando o sistema de inferência fuzzy:
 
-Numpy (operações matemáticas)
+Calcula o tempo de verde.
 
-Instalação
+Determina os graus de pertinência para cada categoria.
 
-Instale as dependências:
+Gera uma explicação automática com base na função dominante.
 
-nginx
-Copiar
-Editar
-pip install -r requirements.txt
-Como Executar
-nginx
-Copiar
-Editar
-python app.py
-Acesse no navegador: http://127.0.0.1:5000
+Se o Modo Emergencial for ativado, adiciona-se um ajuste extra de +15 segundos, respeitando o limite máximo de 120 segundos.
 
-Como Utilizar
-Preencha os dados de entrada para cada Segmento:
+O sistema também calcula uma previsão de fluxo futuro com pequenas variações.
 
-Densidade (0 - 200)
+Todos os gráficos são gerados automaticamente e exibidos na interface.
 
-Velocidade (0 - 70)
+✅ Tecnologias Utilizadas
+Python 3
 
-Espera (0 - 150)
+Flask — para criação da aplicação web.
 
-Incidentes (0 - 6)
+scikit-fuzzy — para modelagem da lógica fuzzy.
 
-(Opcional) Marque "Ativar Modo Emergencial" para priorizar segurança.
+Matplotlib — para geração de gráficos.
 
-Clique em "Calcular".
+NumPy — para operações matemáticas.
+
+ Como Utilizar
+Preencha os valores de entrada para cada um dos 4 segmentos:
+
+Densidade: 0 a 200
+
+Velocidade: 0 a 70
+
+Espera: 0 a 150
+
+Incidentes: 0 a 6
+
+(Opcional) Marque a opção "Ativar Modo Emergencial" para ajustar automaticamente o tempo de verde em situações críticas.
+
+Clique no botão "Calcular".
 
 Visualize:
 
 Tempos de verde calculados.
 
-Graus de pertinência.
+Graus de pertinência para cada segmento.
 
-Gráficos: sequência, pertinência e previsão.
+Função dominante.
 
-Explicação Técnica
-Função calcular_tempo
+Gráficos gerados automaticamente.
 
-Calcula o tempo de verde a partir dos dados inseridos, com pesos definidos por fator de influência:
+Veja também a previsão de fluxo futuro.
 
-Densidade → peso moderado.
+✅ Exemplo de Entrada
+Segmento 1: Densidade: 100, Velocidade: 30, Espera: 60, Incidentes: 1
+Segmento 2: Densidade: 150, Velocidade: 20, Espera: 90, Incidentes: 2
+Segmento 3: Densidade: 50, Velocidade: 50, Espera: 30, Incidentes: 0
+Segmento 4: Densidade: 120, Velocidade: 25, Espera: 80, Incidentes: 1
 
-Espera → peso forte.
+✅ Explicação Técnica
+A modelagem fuzzy define variáveis de entrada e saída com funções de pertinência Triangulares.
 
-Velocidade → impacto negativo.
+São geradas 81 regras que combinam as intensidades de todas as variáveis.
 
-Incidentes → impacto muito forte.
+O sistema utiliza o scikit-fuzzy para realizar a inferência e a defuzzificação.
 
-Ajusta o tempo com base no Modo Emergencial: se ativado, adiciona 15 segundos e permite limite máximo até 120 segundos.
+O Modo Emergencial adiciona um ajuste extra de tempo, com segurança limitada a 120 segundos.
 
-Determina as pertinências (Curto, Médio, Longo) e a Função Dominante.
+O cálculo de previsão gera 3 valores futuros baseados no último tempo calculado, com variações aleatórias de até ±5 segundos.
 
-Previsão de Fluxo Futuro
+Todos os gráficos são gerados com Matplotlib e exibidos na interface.
 
-Após calcular os tempos, simula os próximos 3 ciclos com variação aleatória de ±5 segundos.
-
-Mostra ao usuário a tendência futura do fluxo.
-
-Modo Emergencial
-
-Quando ativado, aumenta o tempo de verde e amplia o limite máximo de segurança.
-
-Justifica automaticamente a decisão na interface.
-
-Geração de Gráficos
-
-plot.png: gráfico da sequência de tempos.
-
-pertinencia.png: gráfico das funções de pertinência.
-
-previsao.png: gráfico da previsão futura.
-
-Exemplo de Dados de Entrada
-Segmento 1: Densidade=100, Velocidade=30, Espera=60, Incidentes=1
-Segmento 2: Densidade=120, Velocidade=25, Espera=80, Incidentes=2
-Segmento 3: Densidade=90, Velocidade=40, Espera=50, Incidentes=0.5
-Segmento 4: Densidade=70, Velocidade=45, Espera=30, Incidentes=0
-
-Possíveis Melhorias Futuras
-Ajustar pesos automaticamente com algoritmos de Machine Learning.
-
-Tornar a previsão mais precisa com base em dados históricos.
-
-Implementar controle adaptativo em tempo real.
-
-Melhorar a interface com mapas interativos.
-
-Licença
-Projeto desenvolvido para fins educacionais.
+✅ Licença
+Este projeto foi desenvolvido para fins educacionais e demonstrativos, ilustrando a aplicação de Lógica Fuzzy em sistemas de controle de tráfego.
